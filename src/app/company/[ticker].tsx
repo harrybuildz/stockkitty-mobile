@@ -12,6 +12,11 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-nat
 import { api, ApiError } from '@/api/client';
 import type { Financials } from '@/api/types';
 import { AssumptionsEditor } from '@/components/assumptions-editor';
+import { DdmCard } from '@/components/company/ddm-card';
+import { InsiderCard } from '@/components/company/insider-card';
+import { QualityCard } from '@/components/company/quality-card';
+import { SentimentCard } from '@/components/company/sentiment-card';
+import { ThesisCard } from '@/components/company/thesis-card';
 import { WatchStar } from '@/components/watch-star';
 import { Centered, ErrorText } from '@/components/ui';
 import { pct, usd } from '@/lib/format';
@@ -67,12 +72,14 @@ export default function Company() {
         </View>
       )}
       {/* Keyed by ticker so edited assumptions never carry over to another company. */}
-      {state.kind === 'ready' && <Valuation key={ticker} financials={state.financials} />}
+      {state.kind === 'ready' && (
+        <Valuation key={ticker} ticker={ticker} financials={state.financials} />
+      )}
     </View>
   );
 }
 
-function Valuation({ financials }: { financials: Financials }) {
+function Valuation({ ticker, financials }: { ticker: string; financials: Financials }) {
   const defaults = useMemo(() => deriveAssumptions(financials), [financials]);
   const [assumptions, setAssumptions] = useState<Assumptions>(defaults);
 
@@ -93,10 +100,12 @@ function Valuation({ financials }: { financials: Financials }) {
       {result ? <Summary result={result} /> : <ErrorText>These assumptions don’t produce a valuation.</ErrorText>}
       <Text style={styles.section}>Assumptions</Text>
       <AssumptionsEditor value={assumptions} defaults={defaults} onChange={setAssumptions} />
-      <Text style={styles.footnote}>
-        Edits recalculate on this device and aren’t saved. AI suggestions, DDM, quality and
-        sentiment are on the web app for now.
-      </Text>
+      <Text style={styles.footnote}>Edits recalculate on this device and aren’t saved.</Text>
+      <DdmCard ticker={ticker} />
+      <QualityCard ticker={ticker} />
+      <ThesisCard ticker={ticker} />
+      <SentimentCard ticker={ticker} />
+      <InsiderCard ticker={ticker} />
     </ScrollView>
   );
 }
