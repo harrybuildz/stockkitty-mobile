@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { api, ApiError, setAuthFailureHandler } from '@/api/client';
 import { clearTokens, getAccessToken, setTokens } from '@/api/tokens';
 import type { Me, TokenResponse } from '@/api/types';
+import { useWatchlist } from '@/store/watchlist';
 
 type AuthState = {
   status: 'loading' | 'signedOut' | 'signedIn';
@@ -55,6 +56,7 @@ export const useAuth = create<AuthState>((set, get) => ({
   logout: async () => {
     if (get().status === 'signedOut') return;
     await clearTokens();
+    useWatchlist.getState().reset();
     set({ status: 'signedOut', user: null });
   },
 }));
