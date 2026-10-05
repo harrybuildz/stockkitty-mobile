@@ -43,6 +43,17 @@ export type SearchResult = {
   name: string;
 };
 
+// One row of GET /api/alerts (fired_alerts table). `fired_at` is a naive
+// UTC datetime string — parse with parseServerTime, not new Date().
+export type FiredAlert = {
+  id: number;
+  ticker: string;
+  alert_type: string;
+  message: string;
+  fired_at: string;
+  acknowledged: number;
+};
+
 export type PortfolioHolding = {
   ticker: string;
   company_name: string | null;

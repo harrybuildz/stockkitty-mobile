@@ -2,6 +2,8 @@ import { create } from 'zustand';
 
 import { api, ApiError, setAuthFailureHandler } from '@/api/client';
 import { clearTokens, getAccessToken, setTokens } from '@/api/tokens';
+import { useAlerts } from '@/store/alerts';
+import { useWatchlist } from '@/store/watchlist';
 import type { Me, TokenResponse } from '@/api/types';
 
 type AuthState = {
@@ -56,6 +58,9 @@ export const useAuth = create<AuthState>((set, get) => ({
     if (get().status === 'signedOut') return;
     await clearTokens();
     set({ status: 'signedOut', user: null });
+    // Per-user stores must not survive into the next session.
+    useWatchlist.getState().reset();
+    useAlerts.getState().reset();
   },
 }));
 

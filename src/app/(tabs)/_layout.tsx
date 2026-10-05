@@ -1,10 +1,21 @@
 import { Tabs } from 'expo-router/js-tabs';
+import { useEffect } from 'react';
 
+import { useAlerts } from '@/store/alerts';
 import { colors } from '@/theme';
 
 // Text-only tabs for the scaffold; icons arrive with the store-submission
 // polish pass.
 export default function TabsLayout() {
+  const alertCount = useAlerts((s) => s.alerts?.length ?? 0);
+
+  // Fetch once when the signed-in shell mounts so the badge is live even
+  // if the user never opens the Alerts tab.
+  useEffect(() => {
+    const { alerts, fetch } = useAlerts.getState();
+    if (alerts == null) void fetch();
+  }, []);
+
   return (
     <Tabs
       screenOptions={{
@@ -18,7 +29,14 @@ export default function TabsLayout() {
       <Tabs.Screen name="index" options={{ title: 'Screener' }} />
       <Tabs.Screen name="portfolios" options={{ title: 'Portfolios' }} />
       <Tabs.Screen name="watchlist" options={{ title: 'Watchlist' }} />
-      <Tabs.Screen name="alerts" options={{ title: 'Alerts' }} />
+      <Tabs.Screen
+        name="alerts"
+        options={{
+          title: 'Alerts',
+          tabBarBadge: alertCount || undefined,
+          tabBarBadgeStyle: { backgroundColor: colors.accent, color: colors.text, fontSize: 10 },
+        }}
+      />
       <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
     </Tabs>
   );
