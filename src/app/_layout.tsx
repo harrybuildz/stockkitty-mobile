@@ -44,6 +44,10 @@ export default function RootLayout() {
             name="company/[ticker]"
             options={{ headerShown: true, title: '', headerBackTitle: 'Back' }}
           />
+          <Stack.Screen
+            name="portfolio/[id]"
+            options={{ headerShown: true, title: '', headerBackTitle: 'Back' }}
+          />
         </Stack.Protected>
         <Stack.Protected guard={signedIn && !termsOk}>
           <Stack.Screen name="accept-terms" />
