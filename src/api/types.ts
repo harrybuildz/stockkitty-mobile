@@ -28,3 +28,11 @@ export type ScreenerRow = {
   market_cap: number | null;
   piotroski_score: number | null;
 };
+
+// GET /api/company/{ticker}/financials — a large dict of series and scalars.
+// Typed loosely; valuation code reads it through @stockkitty/valuation.
+export type Financials = Record<string, unknown> & {
+  companyName?: string;
+  sharesOutstanding?: number;
+  currentMarketPrice?: number;
+};

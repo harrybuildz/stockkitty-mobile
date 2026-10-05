@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "dependencies": {
     "@expo/ui": "~57.0.21",
-    "@stockkitty/valuation": "github:harrybuildz/stockkitty-valuation#a5a222342ee51eb0cf2d76f7831c9ba7e8679b1a",
+    "@stockkitty/valuation": "github:harrybuildz/stockkitty-valuation#0de36bcd19f0bb6ca8bbf82a8c6bbaf5904e1416",
     "expo": "~57.0.26",
     "expo-constants": "~57.0.20",
     "expo-device": "~57.0.2",

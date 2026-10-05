@@ -1,11 +1,16 @@
-import { runValuation, type ValuationResult } from '@stockkitty/valuation';
+import {
+  buildValuationInputs,
+  deriveAssumptions,
+  runValuation,
+  type ValuationResult,
+} from '@stockkitty/valuation';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { api, ApiError } from '@/api/client';
+import type { Financials } from '@/api/types';
 import { Centered, ErrorText } from '@/components/ui';
-import { valuationInputs, type Financials } from '@/lib/assumptions';
 import { pct, usd } from '@/lib/format';
 import { colors, radius, spacing } from '@/theme';
 
@@ -38,7 +43,7 @@ export default function Company() {
         if (!current) return;
         // Live valuation runs on-device through the shared package — the
         // same code the web company page uses.
-        setLoaded({ ticker, kind: 'ready', financials, result: runValuation(valuationInputs(financials)) });
+        setLoaded({ ticker, kind: 'ready', financials, result: runValuation(buildValuationInputs(financials, deriveAssumptions(financials))) });
       })
       .catch((e) => {
         if (current) setLoaded({ ticker, kind: 'error', message: errorMessage(e, ticker) });
