@@ -9,7 +9,10 @@
     "userInterfaceStyle": "dark",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.stockkitty.app"
+      "bundleIdentifier": "com.stockkitty.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -35,12 +38,25 @@
           "imageWidth": 76
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "color": "#2563eb"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
     },
-    "backgroundColor": "#0b0f17"
+    "backgroundColor": "#0b0f17",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "f2264230-5dcd-4122-bfe1-04c841df3f3a"
+      }
+    },
+    "owner": "hclemente"
   }
 }

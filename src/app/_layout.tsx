@@ -1,8 +1,10 @@
-import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
+import * as Notifications from 'expo-notifications';
+import { DarkTheme, router, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
+import { pushSupported } from '@/lib/push';
 import { useAuth } from '@/store/auth';
 import { colors } from '@/theme';
 
@@ -24,6 +26,17 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (status !== 'loading') void SplashScreen.hideAsync();
+  }, [status]);
+
+  // Alert pushes land on the Alerts tab. Covers both a tap with the app
+  // running and a cold start from the notification (the listener fires
+  // for the launching response once the JS is up).
+  useEffect(() => {
+    if (status !== 'signedIn' || !pushSupported) return;
+    const sub = Notifications.addNotificationResponseReceivedListener(() => {
+      router.push('/(tabs)/alerts');
+    });
+    return () => sub.remove();
   }, [status]);
 
   if (status === 'loading') return null;
