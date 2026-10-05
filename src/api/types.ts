@@ -67,6 +67,108 @@ export type Portfolio = {
   is_account?: boolean;
 };
 
+// GET /api/company/{ticker}/quality-indicators. Metric fields are null when
+// the batch couldn't compute them — "no data" and "not applicable" render
+// the same.
+export type QualityIndicators = {
+  piotroski: {
+    score: number | null;
+    total_testable: number;
+  };
+  quality: {
+    roic: number | null;
+    net_debt_to_ebitda: number | null;
+    gross_margin: number | null;
+    revenue_cagr: number | null;
+    fcf_positive_years: number | null;
+    industry: string | null;
+  };
+  earnings_quality: {
+    cash_conversion: number | null;
+  };
+  capital_return: {
+    dividend_yield: number | null;
+    buyback_yield: number | null;
+    total_shareholder_yield: number | null;
+  };
+};
+
+// GET /api/company/{ticker}/thesis — 404 means no cached thesis; pass
+// ?generate=true to create one (counts against the shared 10/hour
+// per-user refresh budget, takes 5–15s).
+export type Thesis = {
+  bull_case: string;
+  bear_case: string;
+  quality_assessment: string;
+  peer_comparison: string;
+  stored_at: string;
+  is_stale: boolean;
+};
+
+// GET /api/company/{ticker}/ddm — applicable=false (no dividend) still
+// returns the supplementary ratios.
+export type Ddm = {
+  applicable: boolean;
+  reason: string | null;
+  pricePerShare: number | null;
+  marginOfSafety: number | null;
+  currentDividend: number;
+  dividendYield: number | null;
+  costOfEquity: number;
+  stage1Growth: number;
+  stage2Growth: number;
+  terminalGrowth: number;
+  pb: number | null;
+  pffo: number | null;
+};
+
+// GET /api/company/{ticker}/news-sentiment (the fields the app renders;
+// the endpoint returns more).
+export type NewsSentiment = {
+  news_count_7d: number;
+  news_count_30d: number;
+  velocity_7d: number;
+  net_sentiment_7d: number;
+  net_sentiment_30d: number;
+  sentiment_momentum: number | null;
+  recent_headlines: {
+    headline: string;
+    url: string;
+    published_utc: string;
+    sentiment: 'positive' | 'negative' | 'neutral';
+    publisher: string;
+  }[];
+  reddit_mentions: number | null;
+  reddit_rank_change: number | null;
+  fetch_status?: 'partial' | 'stale';
+};
+
+// GET /api/company/{ticker}/insider — available=false when the server has
+// no Polygon key; transactions can be empty with a valid zeroed summary.
+export type InsiderActivity = {
+  summary: {
+    buyer_count: number;
+    seller_count: number;
+    buy_value: number;
+    sell_value: number;
+    net_value: number;
+    tx_count: number;
+  };
+  transactions: {
+    date: string;
+    insider: string;
+    role: string;
+    action: string;
+    shares: number;
+    price: number;
+    value: number;
+    is_buy: boolean;
+    is_sell: boolean;
+  }[];
+  days: number;
+  available: boolean;
+};
+
 // GET /api/alerts — fired after each nightly batch for the user's watchlist
 // and custom-portfolio tickers. fired_at is UTC without an offset; parse it
 // with lib/time.ts parseServerTime.
