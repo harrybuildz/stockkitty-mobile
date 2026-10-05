@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 
 import { api, ApiError } from '@/api/client';
+import { CACHE_KEYS, readCache, writeCache } from '@/lib/storage-cache';
 
 type WatchlistState = {
   tickers: string[]; // newest first, as the server returns them
@@ -32,9 +33,21 @@ export const useWatchlist = create<WatchlistState>((set, get) => ({
     if (get().loading) return;
     const gen = generation;
     set({ loading: true, error: null });
+    // Cold start: last session's stars while the network answers. The
+    // cache is cleared on sign-out (auth store), so it's always this
+    // account's list. `loaded` stays false — cache isn't confirmation.
+    if (!get().loaded && !get().tickers.length) {
+      const cached = await readCache<string[]>(CACHE_KEYS.watchlist);
+      if (gen === generation && cached?.length && !get().tickers.length) {
+        set({ tickers: cached });
+      }
+    }
     try {
       const tickers = await api<string[]>('/api/watchlist');
-      if (gen === generation) set({ tickers, loaded: true });
+      if (gen === generation) {
+        set({ tickers, loaded: true });
+        writeCache(CACHE_KEYS.watchlist, tickers);
+      }
     } catch (error) {
       if (gen === generation) set({ error });
     } finally {
@@ -44,12 +57,14 @@ export const useWatchlist = create<WatchlistState>((set, get) => ({
 
   toggle: async (ticker) => {
     const adding = !get().tickers.includes(ticker);
-    const apply = (add: boolean) =>
+    const apply = (add: boolean) => {
       set((s) => ({
         tickers: add
           ? [ticker, ...s.tickers.filter((t) => t !== ticker)]
           : s.tickers.filter((t) => t !== ticker),
       }));
+      writeCache(CACHE_KEYS.watchlist, get().tickers);
+    };
 
     const gen = generation;
     apply(adding);
