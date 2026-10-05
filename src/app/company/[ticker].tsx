@@ -7,13 +7,14 @@ import {
 } from '@stockkitty/valuation';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { api, ApiError } from '@/api/client';
 import type { Financials } from '@/api/types';
 import { AssumptionsEditor } from '@/components/assumptions-editor';
 import { Centered, ErrorText } from '@/components/ui';
 import { pct, usd } from '@/lib/format';
+import { useWatchlist } from '@/store/watchlist';
 import { colors, radius, spacing } from '@/theme';
 
 // Result is tagged with the ticker it belongs to; any mismatch with the
@@ -54,7 +55,9 @@ export default function Company() {
 
   return (
     <View style={styles.screen}>
-      <Stack.Screen options={{ title: ticker }} />
+      <Stack.Screen
+        options={{ title: ticker, headerRight: () => <WatchStar ticker={ticker} /> }}
+      />
       {state.kind === 'loading' && (
         <Centered>
           <ActivityIndicator color={colors.textMuted} />
@@ -68,6 +71,32 @@ export default function Company() {
       {/* Keyed by ticker so edited assumptions never carry over to another company. */}
       {state.kind === 'ready' && <Valuation key={ticker} financials={state.financials} />}
     </View>
+  );
+}
+
+// Watchlist star in the header. Tickers are stored uppercase server-side,
+// and routes are pushed with uppercase tickers, so a plain includes() match
+// is safe. Hidden until the watchlist has loaded — a star of unknown state
+// that flips on first render reads as a glitch.
+function WatchStar({ ticker }: { ticker: string }) {
+  const { tickers, fetch, toggle } = useWatchlist();
+
+  useEffect(() => {
+    if (tickers == null) void fetch();
+  }, [tickers, fetch]);
+
+  if (tickers == null) return null;
+  const watched = tickers.includes(ticker);
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={watched ? `Remove ${ticker} from watchlist` : `Add ${ticker} to watchlist`}
+      onPress={() => void toggle(ticker)}
+      hitSlop={12}>
+      <Text style={{ color: watched ? colors.warning : colors.textFaint, fontSize: 22 }}>
+        {watched ? '★' : '☆'}
+      </Text>
+    </Pressable>
   );
 }
 
