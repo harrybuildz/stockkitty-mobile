@@ -5,6 +5,7 @@ import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'rea
 import { ApiError } from '@/api/client';
 import type { Alert } from '@/api/types';
 import { Button, Centered, ErrorText, Muted, Screen, Title } from '@/components/ui';
+import { track } from '@/lib/analytics';
 import { getPushPermissionStatus, pushSupported, registerForAlertPush } from '@/lib/push';
 import { relativeAge } from '@/lib/time';
 import { useAlerts } from '@/store/alerts';
@@ -28,6 +29,10 @@ export default function Alerts() {
 
   useFocusEffect(
     useCallback(() => {
+      // alerts_open matches the web AlertsBell's event; page_view keeps
+      // the per-screen traffic picture complete.
+      track('alerts_open');
+      track('page_view', { detail: '/alerts' });
       void fetch();
     }, [fetch]),
   );

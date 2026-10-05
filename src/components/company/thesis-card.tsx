@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { api, ApiError } from '@/api/client';
 import { Button } from '@/components/ui';
+import { track } from '@/lib/analytics';
 import { relativeAge } from '@/lib/time';
 import { useCompanyData } from '@/hooks/use-company-data';
 import { colors, spacing } from '@/theme';
@@ -30,6 +31,7 @@ export function ThesisCard({ ticker }: { ticker: string }) {
   const [error, setError] = useState<string | null>(null);
 
   const generate = () => {
+    track('thesis_generate', { ticker });
     setBusy(true);
     setError(null);
     api<Thesis>(`/api/company/${encodeURIComponent(ticker)}/thesis?generate=true`, {

@@ -10,6 +10,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { api, ApiError } from '@/api/client';
+import { track } from '@/lib/analytics';
 import type { Financials } from '@/api/types';
 import { AssumptionsEditor } from '@/components/assumptions-editor';
 import { DdmCard } from '@/components/company/ddm-card';
@@ -44,6 +45,7 @@ export default function Company() {
   const state = loaded?.ticker === ticker ? loaded : ({ kind: 'loading' } as const);
 
   useEffect(() => {
+    track('page_view', { detail: '/company', ticker });
     // Stale-response guard (same rule as the web store): if the ticker
     // changes while this request is in flight, drop its result.
     let current = true;
