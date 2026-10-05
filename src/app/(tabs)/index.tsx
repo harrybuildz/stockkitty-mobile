@@ -1,13 +1,13 @@
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { ApiError } from '@/api/client';
+import { api, ApiError } from '@/api/client';
 import { Centered, ErrorText, Muted, Screen, Title } from '@/components/ui';
 import { pct, usd } from '@/lib/format';
 import { useScreener } from '@/store/screener';
 import { colors, radius, spacing } from '@/theme';
-import type { ScreenerRow } from '@/api/types';
+import type { ScreenerRow, SearchResult } from '@/api/types';
 
 export default function ScreenerScreen() {
   const { rows, loading, error, fetch } = useScreener();
@@ -59,8 +59,70 @@ export default function ScreenerScreen() {
         ListHeaderComponent={
           rows.length ? <Text style={styles.count}>{filtered.length} of {rows.length} companies · sorted by margin of safety</Text> : null
         }
+        ListFooterComponent={
+          query.trim().length >= 2 ? (
+            <WiderSearch query={query.trim()} known={rows} />
+          ) : null
+        }
+        keyboardShouldPersistTaps="handled"
       />
     </Screen>
+  );
+}
+
+type SearchState =
+  | { query: string; kind: 'loading' }
+  | { query: string; kind: 'done'; results: SearchResult[] }
+  | { query: string; kind: 'error'; message: string };
+
+// /api/search also finds companies outside the screener universe (via the
+// data provider), so it's offered as an explicit action rather than fired
+// on every keystroke. State is tagged with its query; a stale answer for a
+// different filter is never shown.
+function WiderSearch({ query, known }: { query: string; known: ScreenerRow[] }) {
+  const [state, setState] = useState<SearchState | null>(null);
+  const current = state?.query === query ? state : null;
+
+  async function run() {
+    setState({ query, kind: 'loading' });
+    try {
+      const results = await api<SearchResult[]>(`/api/search?q=${encodeURIComponent(query)}`);
+      setState({ query, kind: 'done', results });
+    } catch (e) {
+      setState({ query, kind: 'error', message: e instanceof ApiError && e.detail ? e.detail : 'Search failed.' });
+    }
+  }
+
+  if (!current) {
+    return (
+      <Pressable style={styles.searchAll} onPress={run}>
+        <Text style={styles.searchAllText}>Search all companies for “{query}”</Text>
+      </Pressable>
+    );
+  }
+  if (current.kind === 'loading') return <ActivityIndicator style={{ margin: spacing.lg }} color={colors.textMuted} />;
+  if (current.kind === 'error') return <View style={{ marginTop: spacing.md }}><ErrorText>{current.message}</ErrorText></View>;
+
+  const knownTickers = new Set(known.map((r) => r.ticker));
+  const extra = current.results.filter((r) => !knownTickers.has(r.symbol));
+  return (
+    <View style={{ marginTop: spacing.md }}>
+      <Text style={styles.count}>
+        {extra.length ? 'Other companies' : 'No other companies found.'}
+      </Text>
+      {extra.map((r) => (
+        <Pressable
+          key={r.symbol}
+          style={({ pressed }) => [styles.row, pressed && { backgroundColor: colors.panel }]}
+          onPress={() => router.push({ pathname: '/company/[ticker]', params: { ticker: r.symbol } })}>
+          <View style={styles.rowMain}>
+            <Text style={styles.ticker}>{r.symbol}</Text>
+            <Text style={styles.name} numberOfLines={1}>{r.name}</Text>
+          </View>
+          <Text style={styles.notScreened}>Not in screener</Text>
+        </Pressable>
+      ))}
+    </View>
   );
 }
 
@@ -111,4 +173,7 @@ const styles = StyleSheet.create({
   rowNums: { alignItems: 'flex-end' },
   price: { color: colors.text, fontSize: 15, fontVariant: ['tabular-nums'] },
   mos: { fontSize: 13, marginTop: 2, fontVariant: ['tabular-nums'] },
+  searchAll: { paddingVertical: spacing.lg, alignItems: 'center' },
+  searchAllText: { color: colors.accentSoft, fontSize: 14 },
+  notScreened: { color: colors.textFaint, fontSize: 12 },
 });

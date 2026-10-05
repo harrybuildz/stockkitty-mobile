@@ -36,3 +36,33 @@ export type Financials = Record<string, unknown> & {
   sharesOutstanding?: number;
   currentMarketPrice?: number;
 };
+
+// GET /api/search — screener-cache matches first, then wider lookups.
+export type SearchResult = {
+  symbol: string;
+  name: string;
+};
+
+export type PortfolioHolding = {
+  ticker: string;
+  company_name: string | null;
+  sector: string | null;
+  allocation: number; // fraction of the portfolio, 0–1
+  market_price: number | null;
+  avg_price: number | null;
+  margin_of_safety: number | null;
+};
+
+// One entry of GET /api/portfolios: built-in strategies first, then the
+// user's custom portfolios (id "custom_<n>"). Accounts hold real positions,
+// not target weights, so their `holdings` is empty.
+export type Portfolio = {
+  id: string;
+  name: string;
+  subtitle: string;
+  philosophy: string;
+  holdings: PortfolioHolding[];
+  sector_breakdown: Record<string, number>;
+  holding_count?: number;
+  is_account?: boolean;
+};

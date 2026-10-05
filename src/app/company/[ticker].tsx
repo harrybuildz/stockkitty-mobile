@@ -2,14 +2,16 @@ import {
   buildValuationInputs,
   deriveAssumptions,
   runValuation,
+  type Assumptions,
   type ValuationResult,
 } from '@stockkitty/valuation';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { api, ApiError } from '@/api/client';
 import type { Financials } from '@/api/types';
+import { AssumptionsEditor } from '@/components/assumptions-editor';
 import { Centered, ErrorText } from '@/components/ui';
 import { pct, usd } from '@/lib/format';
 import { colors, radius, spacing } from '@/theme';
@@ -18,7 +20,7 @@ import { colors, radius, spacing } from '@/theme';
 // current route param renders as loading.
 type Loaded =
   | { ticker: string; kind: 'error'; message: string }
-  | { ticker: string; kind: 'ready'; financials: Financials; result: ValuationResult };
+  | { ticker: string; kind: 'ready'; financials: Financials };
 
 function errorMessage(e: unknown, ticker: string): string {
   if (e instanceof ApiError) {
@@ -40,10 +42,7 @@ export default function Company() {
     let current = true;
     api<Financials>(`/api/company/${encodeURIComponent(ticker)}/financials`)
       .then((financials) => {
-        if (!current) return;
-        // Live valuation runs on-device through the shared package — the
-        // same code the web company page uses.
-        setLoaded({ ticker, kind: 'ready', financials, result: runValuation(buildValuationInputs(financials, deriveAssumptions(financials))) });
+        if (current) setLoaded({ ticker, kind: 'ready', financials });
       })
       .catch((e) => {
         if (current) setLoaded({ ticker, kind: 'error', message: errorMessage(e, ticker) });
@@ -66,17 +65,46 @@ export default function Company() {
           <ErrorText>{state.message}</ErrorText>
         </View>
       )}
-      {state.kind === 'ready' && <Valuation financials={state.financials} result={state.result} />}
+      {/* Keyed by ticker so edited assumptions never carry over to another company. */}
+      {state.kind === 'ready' && <Valuation key={ticker} financials={state.financials} />}
     </View>
   );
 }
 
-function Valuation({ financials, result }: { financials: Financials; result: ValuationResult }) {
+function Valuation({ financials }: { financials: Financials }) {
+  const defaults = useMemo(() => deriveAssumptions(financials), [financials]);
+  const [assumptions, setAssumptions] = useState<Assumptions>(defaults);
+
+  // Live recompute on-device through the shared package — the same
+  // deriveAssumptions / buildValuationInputs / runValuation path as the web
+  // company page, so an edit here moves the numbers exactly as it would there.
+  const result = useMemo<ValuationResult | null>(() => {
+    try {
+      return runValuation(buildValuationInputs(financials, assumptions));
+    } catch {
+      return null;
+    }
+  }, [financials, assumptions]);
+
+  return (
+    <ScrollView contentContainerStyle={styles.pad} keyboardShouldPersistTaps="handled">
+      {financials.companyName ? <Text style={styles.name}>{financials.companyName}</Text> : null}
+      {result ? <Summary result={result} /> : <ErrorText>These assumptions don’t produce a valuation.</ErrorText>}
+      <Text style={styles.section}>Assumptions</Text>
+      <AssumptionsEditor value={assumptions} defaults={defaults} onChange={setAssumptions} />
+      <Text style={styles.footnote}>
+        Edits recalculate on this device and aren’t saved. AI suggestions, DDM, quality and
+        sentiment are on the web app for now.
+      </Text>
+    </ScrollView>
+  );
+}
+
+function Summary({ result }: { result: ValuationResult }) {
   const { summary } = result;
   const mos = summary.marginOfSafety;
   return (
-    <ScrollView contentContainerStyle={styles.pad}>
-      {financials.companyName ? <Text style={styles.name}>{financials.companyName}</Text> : null}
+    <>
       <View style={styles.hero}>
         <Stat label="Market price" value={usd(summary.currentMarketPrice)} />
         <Stat label="Intrinsic value" value={usd(summary.avgIntrinsicValue || null)} />
@@ -92,11 +120,7 @@ function Valuation({ financials, result }: { financials: Financials; result: Val
         <ModelRow label="Excess profit" value={result.ep.pricePerShare} />
         <ModelRow label="Residual earnings" value={result.re.pricePerShare} last />
       </View>
-      <Text style={styles.footnote}>
-        Computed on-device from default assumptions. Assumption editing, AI suggestions, DDM,
-        quality and sentiment arrive in the next milestone.
-      </Text>
-    </ScrollView>
+    </>
   );
 }
 
