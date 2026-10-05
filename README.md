@@ -29,7 +29,7 @@ CI runs all three on every PR.
 - `src/api/tokens.ts` — tokens in `expo-secure-store` (Keychain / Android Keystore). `tokens.web.ts` falls back to `localStorage` for the web target.
 - `src/api/types.gen.ts` — generated from the backend's OpenAPI schema (`npm run gen:api`, or `API_SCHEMA=path/to/openapi.json npm run gen:api`). Most endpoints return untyped dicts, so response shapes the app reads live in `src/api/types.ts`.
 - Valuation math comes from [`@stockkitty/valuation`](https://github.com/harrybuildz/stockkitty-valuation), pinned to the same commit as the web app, so both clients compute identical intrinsic values. Keep the pinned sha in `package.json` in step with `stockkitty/frontend/package.json`.
-- `src/lib/assumptions.ts` — default-assumption derivation, ported verbatim from the web store. Should move into `@stockkitty/valuation` so it can't drift.
+- Default assumptions and the input merge also come from the package (`deriveAssumptions`, `buildValuationInputs`), the same functions the web store uses.
 - Styling is plain `StyleSheet` with tokens in `src/theme/` copied from the web Tailwind palette.
 
 ## Builds

@@ -22,4 +22,28 @@ declare module '@stockkitty/valuation' {
   };
 
   export function runValuation(inputs: Record<string, unknown>): ValuationResult;
+
+  export type Assumptions = {
+    taxRate: number;
+    longTermGrowth: number;
+    rm: number;
+    rf: number;
+    capExpEfficiency: number;
+    beta: number;
+    roic: number;
+    roe: number;
+    payoutRatio: number;
+    rd: number;
+    salesGrowth: number;
+  };
+
+  export const DEFAULT_ASSUMPTIONS: Pick<
+    Assumptions,
+    'taxRate' | 'longTermGrowth' | 'rm' | 'rf' | 'capExpEfficiency'
+  >;
+  export function deriveAssumptions(financials: Record<string, unknown>): Assumptions;
+  export function buildValuationInputs(
+    financials: Record<string, unknown>,
+    assumptions: Partial<Assumptions>,
+  ): Record<string, unknown>;
 }
