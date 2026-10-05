@@ -66,3 +66,15 @@ export type Portfolio = {
   holding_count?: number;
   is_account?: boolean;
 };
+
+// GET /api/alerts — fired after each nightly batch for the user's watchlist
+// and custom-portfolio tickers. fired_at is UTC without an offset; parse it
+// with lib/time.ts parseServerTime.
+export type Alert = {
+  id: number;
+  ticker: string;
+  alert_type: string;
+  message: string;
+  fired_at: string;
+  acknowledged: 0 | 1 | boolean;
+};
