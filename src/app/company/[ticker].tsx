@@ -17,6 +17,7 @@ import { InsiderCard } from '@/components/company/insider-card';
 import { QualityCard } from '@/components/company/quality-card';
 import { SentimentCard } from '@/components/company/sentiment-card';
 import { ThesisCard } from '@/components/company/thesis-card';
+import { TrendsCard } from '@/components/company/trends-card';
 import { WatchStar } from '@/components/watch-star';
 import { Centered, ErrorText } from '@/components/ui';
 import { pct, usd } from '@/lib/format';
@@ -101,6 +102,7 @@ function Valuation({ ticker, financials }: { ticker: string; financials: Financi
       <Text style={styles.section}>Assumptions</Text>
       <AssumptionsEditor value={assumptions} defaults={defaults} onChange={setAssumptions} />
       <Text style={styles.footnote}>Edits recalculate on this device and aren’t saved.</Text>
+      <TrendsCard financials={financials} />
       <DdmCard ticker={ticker} />
       <QualityCard ticker={ticker} />
       <ThesisCard ticker={ticker} />

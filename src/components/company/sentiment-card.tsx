@@ -1,6 +1,7 @@
 import * as WebBrowser from 'expo-web-browser';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { Sparkline } from '@/components/charts';
 import { pct } from '@/lib/format';
 import { relativeAge } from '@/lib/time';
 import { useCompanyData } from '@/hooks/use-company-data';
@@ -44,11 +45,27 @@ export function SentimentCard({ ticker }: { ticker: string }) {
             color={netColor(s.sentiment_momentum)}
           />
           <MetricRow label="Coverage velocity" value={`${s.velocity_7d.toFixed(1)}×`} />
+          {(s.sentiment_history?.length ?? 0) >= 2 && (
+            <View style={styles.spark}>
+              <Text style={styles.sparkLabel}>Sentiment, last {s.sentiment_history!.length} days</Text>
+              <Sparkline values={s.sentiment_history!.map((d) => d.net_sentiment)} />
+            </View>
+          )}
           <MetricRow
             label="Reddit mentions (24h)"
             value={s.reddit_mentions == null ? '—' : String(s.reddit_mentions)}
-            last={!s.recent_headlines.length}
+            last={!s.recent_headlines.length && !s.reddit_by_subreddit}
           />
+          {s.reddit_by_subreddit != null &&
+            Object.entries(s.reddit_by_subreddit).map(([sub, r]) => (
+              <MetricRow
+                key={sub}
+                label={`r/${sub}`}
+                value={`${r.mentions} mentions · rank #${r.rank}${
+                  r.rank_change == null ? '' : ` (${r.rank_change > 0 ? '+' : ''}${r.rank_change})`
+                }`}
+              />
+            ))}
           {s.recent_headlines.slice(0, HEADLINE_LIMIT).map((h, i, shown) => (
             <Pressable
               key={h.url}
@@ -90,6 +107,13 @@ function netColor(v: number | null): string | undefined {
 }
 
 const styles = StyleSheet.create({
+  spark: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderBottomColor: colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  sparkLabel: { color: colors.textFaint, fontSize: 11, marginBottom: 4 },
   headline: {
     flexDirection: 'row',
     alignItems: 'flex-start',

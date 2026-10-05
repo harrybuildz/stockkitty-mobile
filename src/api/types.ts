@@ -140,6 +140,11 @@ export type NewsSentiment = {
   }[];
   reddit_mentions: number | null;
   reddit_rank_change: number | null;
+  sentiment_history: { date: string; net_sentiment: number; count: number }[] | null;
+  reddit_by_subreddit: Record<
+    string,
+    { mentions: number; rank: number; rank_change: number | null; sentiment_score: number | null }
+  > | null;
   fetch_status?: 'partial' | 'stale';
 };
 
