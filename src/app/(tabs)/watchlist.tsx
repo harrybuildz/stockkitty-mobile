@@ -5,6 +5,7 @@ import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'rea
 import { ApiError } from '@/api/client';
 import type { ScreenerRow } from '@/api/types';
 import { Centered, ErrorText, Muted, Screen, Title } from '@/components/ui';
+import { track } from '@/lib/analytics';
 import { pct, usd } from '@/lib/format';
 import { useScreener } from '@/store/screener';
 import { useWatchlist } from '@/store/watchlist';
@@ -18,6 +19,7 @@ export default function Watchlist() {
   // (or another device) show up without restarting the app.
   useFocusEffect(
     useCallback(() => {
+      track('page_view', { detail: '/watchlist' });
       void fetch();
       if (!useScreener.getState().rows.length) void fetchScreener();
     }, [fetch, fetchScreener]),

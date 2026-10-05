@@ -4,7 +4,9 @@ import { api, ApiError, setAuthFailureHandler } from '@/api/client';
 import { clearTokens, getAccessToken, setTokens } from '@/api/tokens';
 import type { Me, TokenResponse } from '@/api/types';
 import { unregisterPush } from '@/lib/push';
+import { clearUserCaches } from '@/lib/storage-cache';
 import { useAlerts } from '@/store/alerts';
+import { usePortfolios } from '@/store/portfolios';
 import { useWatchlist } from '@/store/watchlist';
 
 type AuthState = {
@@ -67,6 +69,8 @@ export const useAuth = create<AuthState>((set, get) => ({
     await clearTokens();
     useWatchlist.getState().reset();
     useAlerts.getState().reset();
+    usePortfolios.getState().reset();
+    clearUserCaches();
   },
 }));
 

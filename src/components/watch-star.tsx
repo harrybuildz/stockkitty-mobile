@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 
+import { track } from '@/lib/analytics';
 import { useWatchlist } from '@/store/watchlist';
 import { colors, spacing } from '@/theme';
 
@@ -23,7 +24,10 @@ export function WatchStar({ ticker }: { ticker: string }) {
       accessibilityState={{ selected: watched }}
       hitSlop={8}
       disabled={!loaded}
-      onPress={() => void toggle(ticker)}
+      onPress={() => {
+        if (!watched) track('watchlist_add', { ticker });
+        void toggle(ticker);
+      }}
       style={({ pressed }) => [styles.button, (pressed || !loaded) && { opacity: 0.5 }]}>
       <Text style={[styles.star, watched && { color: colors.warning }]}>{watched ? '★' : '☆'}</Text>
     </Pressable>

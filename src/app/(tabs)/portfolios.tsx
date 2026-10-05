@@ -1,10 +1,11 @@
-import { router } from 'expo-router';
-import { useEffect } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import type { Portfolio } from '@/api/types';
 import { Centered, ErrorText, Muted, Screen, Title } from '@/components/ui';
+import { track } from '@/lib/analytics';
 import { usePortfolios } from '@/store/portfolios';
 import { colors, radius, spacing } from '@/theme';
 
@@ -14,6 +15,8 @@ export default function Portfolios() {
   useEffect(() => {
     if (!portfolios.length) void fetch();
   }, [portfolios.length, fetch]);
+
+  useFocusEffect(useCallback(() => track('page_view', { detail: '/portfolios' }), []));
 
   return (
     <Screen>

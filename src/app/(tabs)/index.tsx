@@ -1,8 +1,9 @@
-import { router } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { api, ApiError } from '@/api/client';
+import { track } from '@/lib/analytics';
 import { Centered, ErrorText, Muted, Screen, Title } from '@/components/ui';
 import { pct, usd } from '@/lib/format';
 import { useScreener } from '@/store/screener';
@@ -16,6 +17,10 @@ export default function ScreenerScreen() {
   useEffect(() => {
     if (!rows.length) void fetch();
   }, [rows.length, fetch]);
+
+  // Same detail string as the web screener ('/') so the admin analytics
+  // aggregates count both clients together.
+  useFocusEffect(useCallback(() => track('page_view', { detail: '/' }), []));
 
   const filtered = useMemo(() => {
     const q = query.trim().toUpperCase();
