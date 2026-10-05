@@ -1,10 +1,11 @@
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import type { Alert } from '@/api/types';
-import { Centered, ErrorText, Muted, Screen, Title } from '@/components/ui';
+import { Button, Centered, ErrorText, Muted, Screen, Title } from '@/components/ui';
+import { getPushPermissionStatus, pushSupported, registerForAlertPush } from '@/lib/push';
 import { relativeAge } from '@/lib/time';
 import { useAlerts } from '@/store/alerts';
 import { colors, radius, spacing } from '@/theme';
@@ -48,6 +49,7 @@ export default function Alerts() {
       {error != null && (
         <ErrorText>{error instanceof ApiError ? (error.detail ?? error.message) : String(error)}</ErrorText>
       )}
+      <PushBanner />
       <FlatList
         data={alerts}
         keyExtractor={(a) => String(a.id)}
@@ -67,6 +69,57 @@ export default function Alerts() {
         }
       />
     </Screen>
+  );
+}
+
+// "Enabled" is simply OS permission granted — no separate app flag to
+// drift out of sync. When granted, silently re-register on mount so the
+// server sees fresh tokens; otherwise offer the one-tap enable.
+function PushBanner() {
+  const [state, setState] = useState<'checking' | 'prompt' | 'enabled'>(
+    pushSupported ? 'checking' : 'enabled',
+  );
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!pushSupported) return;
+    let current = true;
+    void getPushPermissionStatus().then((status) => {
+      if (!current) return;
+      if (status === 'granted') {
+        setState('enabled');
+        void registerForAlertPush().catch(() => {});
+      } else {
+        setState('prompt');
+      }
+    });
+    return () => {
+      current = false;
+    };
+  }, []);
+
+  if (state !== 'prompt') return null;
+  return (
+    <View style={styles.banner}>
+      <Text style={styles.bannerText}>
+        Get a notification when alerts fire for your watched companies — once a day at most,
+        after the data refresh.
+      </Text>
+      {message != null && <Text style={styles.bannerError}>{message}</Text>}
+      <Button
+        label="Enable notifications"
+        loading={busy}
+        onPress={() => {
+          setBusy(true);
+          setMessage(null);
+          registerForAlertPush()
+            .then(() => setState('enabled'))
+            .catch((e) => setMessage(e instanceof Error ? e.message : 'Could not enable notifications.'))
+            .finally(() => setBusy(false));
+        }}
+      />
+    </View>
   );
 }
 
@@ -149,4 +202,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   ackText: { color: colors.textMuted, fontSize: 15 },
+  banner: {
+    backgroundColor: colors.panel,
+    borderColor: colors.border,
+    borderWidth: 1,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    gap: spacing.md,
+  },
+  bannerText: { color: colors.textMuted, fontSize: 13, lineHeight: 18 },
+  bannerError: { color: colors.negative, fontSize: 12 },
 });
