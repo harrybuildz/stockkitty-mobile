@@ -12,6 +12,7 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-nat
 import { api, ApiError } from '@/api/client';
 import type { Financials } from '@/api/types';
 import { AssumptionsEditor } from '@/components/assumptions-editor';
+import { WatchStar } from '@/components/watch-star';
 import { Centered, ErrorText } from '@/components/ui';
 import { pct, usd } from '@/lib/format';
 import { colors, radius, spacing } from '@/theme';
@@ -54,7 +55,7 @@ export default function Company() {
 
   return (
     <View style={styles.screen}>
-      <Stack.Screen options={{ title: ticker }} />
+      <Stack.Screen options={{ title: ticker, headerRight: () => <WatchStar ticker={ticker} /> }} />
       {state.kind === 'loading' && (
         <Centered>
           <ActivityIndicator color={colors.textMuted} />
