@@ -34,4 +34,19 @@ CI runs all three on every PR.
 
 ## Builds
 
-EAS isn't configured yet. Run `npx eas-cli@latest init` with your Expo account, then add `eas.json` profiles that set `EXPO_PUBLIC_API_BASE_URL` to the production backend.
+Builds run on Expo's EAS service. `eas.json` has two profiles, both pointed at production (`https://stockkitty-production.up.railway.app`) via `EXPO_PUBLIC_API_BASE_URL`:
+
+- `preview` — internal distribution: an installable build for your own devices (iOS ad hoc, Android APK).
+- `production` — store builds; the build number auto-increments.
+
+The app identifier is `com.stockkitty.app` on both platforms. It's permanent once submitted.
+
+First time:
+
+```sh
+npx eas-cli@latest login
+npx eas-cli@latest init            # links this repo to an Expo project (writes extra.eas.projectId)
+npx eas-cli@latest build --platform all --profile preview
+```
+
+iOS builds need an Apple Developer account; EAS walks you through signing on the first build. For day-to-day development keep using `npx expo start` with `.env.local`.
