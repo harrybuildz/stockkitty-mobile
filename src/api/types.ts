@@ -174,6 +174,34 @@ export type InsiderActivity = {
   available: boolean;
 };
 
+// GET /api/positions/{portfolio_id} — real brokerage holdings for an
+// account-kind portfolio. target_weight/drift are meaningful only when a
+// lens strategy is attached (all-zero otherwise).
+export type AccountPosition = {
+  ticker: string;
+  company_name: string;
+  sector: string;
+  shares: number;
+  cost_basis: number | null;
+  current_price: number | null;
+  market_value: number | null;
+  actual_weight: number;
+  target_weight: number;
+  drift: number;
+  return_pct: number | null;
+  unrealized_gain: number | null;
+  in_strategy: boolean;
+};
+
+export type AccountPositionsResponse = {
+  positions: AccountPosition[];
+  totals: {
+    market_value: number;
+    cost: number;
+    return_pct: number | null;
+  };
+};
+
 // GET /api/alerts — fired after each nightly batch for the user's watchlist
 // and custom-portfolio tickers. fired_at is UTC without an offset; parse it
 // with lib/time.ts parseServerTime.
