@@ -8,7 +8,6 @@
     "scheme": "stockkitty",
     "userInterfaceStyle": "dark",
     "ios": {
-      "icon": "./assets/expo.icon",
       "bundleIdentifier": "com.stockkitty.app",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
@@ -35,7 +34,7 @@
         {
           "backgroundColor": "#0b0f17",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "imageWidth": 120
         }
       ],
       "expo-secure-store",
