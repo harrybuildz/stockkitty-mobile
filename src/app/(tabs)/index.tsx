@@ -66,14 +66,22 @@ export default function ScreenerScreen() {
       <View style={styles.brand}>
         <Image source={require('../../../assets/images/logo.png')} style={styles.brandLogo} />
         <Title>StockKitty</Title>
-        <Pressable
-          style={styles.brandAction}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel="Open Spotlights"
-          onPress={() => router.push('/spotlights')}>
-          <Ionicons name="sparkles" size={20} color={colors.accentSoft} />
-        </Pressable>
+        <View style={styles.brandActions}>
+          <Pressable
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Compare companies"
+            onPress={() => router.push('/compare')}>
+            <Ionicons name="swap-horizontal" size={20} color={colors.accentSoft} />
+          </Pressable>
+          <Pressable
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Open Spotlights"
+            onPress={() => router.push('/spotlights')}>
+            <Ionicons name="sparkles" size={20} color={colors.accentSoft} />
+          </Pressable>
+        </View>
       </View>
       <View style={styles.controls}>
         <TextInput
@@ -217,7 +225,12 @@ function Row({ row }: { row: ScreenerRow }) {
 
 const styles = StyleSheet.create({
   brand: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  brandAction: { marginLeft: 'auto', marginBottom: spacing.md },
+  brandActions: {
+    marginLeft: 'auto',
+    marginBottom: spacing.md,
+    flexDirection: 'row',
+    gap: spacing.lg,
+  },
   brandLogo: { width: 32, height: 32, marginBottom: spacing.md, resizeMode: 'contain' },
   controls: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm },
   search: {
