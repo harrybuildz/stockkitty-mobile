@@ -27,6 +27,15 @@ export type ScreenerRow = {
   margin_of_safety: number | null;
   market_cap: number | null;
   piotroski_score: number | null;
+  // Fields read by the filter system (lib/screener-filters.ts).
+  fcf_price: number | null;
+  ep_price: number | null;
+  re_price: number | null;
+  cash_conversion: number | null;
+  dividend_yield: number | null;
+  buyback_yield: number | null;
+  /** JSON string of {code, model, msg}[] — parse with parseFlags. */
+  flags: string | null;
 };
 
 // GET /api/company/{ticker}/financials — a large dict of series and scalars.
