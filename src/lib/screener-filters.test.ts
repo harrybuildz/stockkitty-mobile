@@ -30,6 +30,13 @@ function row(overrides: Partial<ScreenerRow>): ScreenerRow {
     dividend_yield: 0.02,
     buyback_yield: 0.01,
     flags: null,
+    ddm_price: null,
+    roic: null,
+    net_debt_to_ebitda: null,
+    gross_margin: null,
+    revenue_cagr: null,
+    fcf_positive_years: null,
+    piotroski_total_testable: null,
     ...overrides,
   };
 }

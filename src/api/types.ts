@@ -36,6 +36,14 @@ export type ScreenerRow = {
   buyback_yield: number | null;
   /** JSON string of {code, model, msg}[] — parse with parseFlags. */
   flags: string | null;
+  // Fields read by the Compare screen.
+  ddm_price: number | null;
+  roic: number | null;
+  net_debt_to_ebitda: number | null;
+  gross_margin: number | null;
+  revenue_cagr: number | null;
+  fcf_positive_years: number | null;
+  piotroski_total_testable: number | null;
 };
 
 // GET /api/company/{ticker}/financials — a large dict of series and scalars.

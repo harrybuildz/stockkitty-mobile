@@ -65,6 +65,10 @@ export default function RootLayout() {
             name="spotlights"
             options={{ headerShown: true, title: '', headerBackTitle: 'Back' }}
           />
+          <Stack.Screen
+            name="compare"
+            options={{ headerShown: true, title: '', headerBackTitle: 'Back' }}
+          />
         </Stack.Protected>
         <Stack.Protected guard={signedIn && !termsOk}>
           <Stack.Screen name="accept-terms" />
