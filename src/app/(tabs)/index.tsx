@@ -1,3 +1,4 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Image, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -65,6 +66,14 @@ export default function ScreenerScreen() {
       <View style={styles.brand}>
         <Image source={require('../../../assets/images/logo.png')} style={styles.brandLogo} />
         <Title>StockKitty</Title>
+        <Pressable
+          style={styles.brandAction}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Open Spotlights"
+          onPress={() => router.push('/spotlights')}>
+          <Ionicons name="sparkles" size={20} color={colors.accentSoft} />
+        </Pressable>
       </View>
       <View style={styles.controls}>
         <TextInput
@@ -208,6 +217,7 @@ function Row({ row }: { row: ScreenerRow }) {
 
 const styles = StyleSheet.create({
   brand: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  brandAction: { marginLeft: 'auto', marginBottom: spacing.md },
   brandLogo: { width: 32, height: 32, marginBottom: spacing.md, resizeMode: 'contain' },
   controls: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm },
   search: {

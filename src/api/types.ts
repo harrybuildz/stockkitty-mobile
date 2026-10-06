@@ -183,6 +183,30 @@ export type InsiderActivity = {
   available: boolean;
 };
 
+// GET /api/highlights — screener rows grouped by spotlight rule, with a
+// one-sentence evidence string per company. Companies are server-capped
+// at 15 per rule; `total` carries the uncapped count.
+export type Highlights = {
+  categories: { key: string; label: string }[];
+  rules: {
+    code: string;
+    category: string;
+    label: string;
+    blurb: string;
+    total: number;
+    companies: {
+      ticker: string;
+      company_name: string | null;
+      sector: string | null;
+      market_cap: number | null;
+      market_price: number | null;
+      margin_of_safety: number | null;
+      consensus_label: string | null;
+      evidence: string;
+    }[];
+  }[];
+};
+
 // GET /api/positions/{portfolio_id} — real brokerage holdings for an
 // account-kind portfolio. target_weight/drift are meaningful only when a
 // lens strategy is attached (all-zero otherwise).

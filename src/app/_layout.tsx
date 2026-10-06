@@ -61,6 +61,10 @@ export default function RootLayout() {
             name="portfolio/[id]"
             options={{ headerShown: true, title: '', headerBackTitle: 'Back' }}
           />
+          <Stack.Screen
+            name="spotlights"
+            options={{ headerShown: true, title: '', headerBackTitle: 'Back' }}
+          />
         </Stack.Protected>
         <Stack.Protected guard={signedIn && !termsOk}>
           <Stack.Screen name="accept-terms" />
