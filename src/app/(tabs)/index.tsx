@@ -3,46 +3,92 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { api, ApiError } from '@/api/client';
-import { track } from '@/lib/analytics';
+import { FilterSheet } from '@/components/filter-sheet';
 import { Centered, ErrorText, Muted, Screen, Title } from '@/components/ui';
+import { track } from '@/lib/analytics';
 import { pct, usd } from '@/lib/format';
+import { activeFilterCount, applyFilters } from '@/lib/screener-filters';
 import { useScreener } from '@/store/screener';
+import { useScreenerFilters } from '@/store/screener-filters';
+import { useWatchlist } from '@/store/watchlist';
 import { colors, radius, spacing } from '@/theme';
 import type { ScreenerRow, SearchResult } from '@/api/types';
 
 export default function ScreenerScreen() {
   const { rows, loading, error, fetch } = useScreener();
   const [query, setQuery] = useState('');
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const filterState = useScreenerFilters();
+  const watchlist = useWatchlist((s) => s.tickers);
+  const filterCount = activeFilterCount(filterState);
 
   useEffect(() => {
     if (!rows.length) void fetch();
   }, [rows.length, fetch]);
 
+  // "Watchlist only" is meaningless until the watchlist has loaded —
+  // fetch it the moment the toggle goes on, not only when the tab opens.
+  useEffect(() => {
+    if (filterState.watchlistOnly && !useWatchlist.getState().loaded) {
+      void useWatchlist.getState().fetch();
+    }
+  }, [filterState.watchlistOnly]);
+
   // Same detail string as the web screener ('/') so the admin analytics
   // aggregates count both clients together.
   useFocusEffect(useCallback(() => track('page_view', { detail: '/' }), []));
 
+  const screened = useMemo(
+    () =>
+      applyFilters(
+        rows,
+        {
+          active: filterState.active,
+          hiddenCats: filterState.hiddenCats,
+          watchlistOnly: filterState.watchlistOnly,
+        },
+        watchlist,
+      ),
+    [rows, filterState.active, filterState.hiddenCats, filterState.watchlistOnly, watchlist],
+  );
+
   const filtered = useMemo(() => {
     const q = query.trim().toUpperCase();
-    if (!q) return rows;
-    return rows.filter(
+    if (!q) return screened;
+    return screened.filter(
       (r) => r.ticker.includes(q) || (r.company_name ?? '').toUpperCase().includes(q),
     );
-  }, [rows, query]);
+  }, [screened, query]);
 
   return (
     <Screen>
       <Title>Screener</Title>
-      <TextInput
-        style={styles.search}
-        placeholder="Filter by ticker or name"
-        placeholderTextColor={colors.textFaint}
-        autoCapitalize="characters"
-        autoCorrect={false}
-        value={query}
-        onChangeText={setQuery}
-        clearButtonMode="while-editing"
-      />
+      <View style={styles.controls}>
+        <TextInput
+          style={[styles.search, { flex: 1 }]}
+          placeholder="Filter by ticker or name"
+          placeholderTextColor={colors.textFaint}
+          autoCapitalize="characters"
+          autoCorrect={false}
+          value={query}
+          onChangeText={setQuery}
+          clearButtonMode="while-editing"
+        />
+        <Pressable
+          style={({ pressed }) => [
+            styles.filterBtn,
+            filterCount > 0 && styles.filterBtnActive,
+            pressed && { opacity: 0.7 },
+          ]}
+          onPress={() => setSheetOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Open screener filters">
+          <Text style={[styles.filterBtnText, filterCount > 0 && { color: colors.text }]}>
+            Filters{filterCount > 0 ? ` (${filterCount})` : ''}
+          </Text>
+        </Pressable>
+      </View>
+      <FilterSheet visible={sheetOpen} onClose={() => setSheetOpen(false)} />
       {error != null && <ErrorText>{error instanceof ApiError ? (error.detail ?? error.message) : String(error)}</ErrorText>}
       <FlatList
         data={filtered}
@@ -158,6 +204,7 @@ function Row({ row }: { row: ScreenerRow }) {
 }
 
 const styles = StyleSheet.create({
+  controls: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm },
   search: {
     backgroundColor: colors.panel,
     borderColor: colors.border,
@@ -167,8 +214,17 @@ const styles = StyleSheet.create({
     fontSize: 15,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm + 2,
-    marginBottom: spacing.sm,
   },
+  filterBtn: {
+    backgroundColor: colors.panel,
+    borderColor: colors.border,
+    borderWidth: 1,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    justifyContent: 'center',
+  },
+  filterBtnActive: { backgroundColor: colors.accent, borderColor: colors.accent },
+  filterBtnText: { color: colors.textMuted, fontSize: 14, fontWeight: '600' },
   count: { color: colors.textFaint, fontSize: 12, paddingVertical: spacing.sm },
   sep: { height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.md, gap: spacing.md },
