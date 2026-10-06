@@ -1,12 +1,11 @@
-import * as WebBrowser from 'expo-web-browser';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import type { Portfolio, PortfolioHolding } from '@/api/types';
-import { Button, Centered, Muted } from '@/components/ui';
-import { API_BASE_URL } from '@/config';
-import { pct } from '@/lib/format';
+import type { AccountPosition, AccountPositionsResponse, Portfolio, PortfolioHolding } from '@/api/types';
+import { Centered, ErrorText, Muted } from '@/components/ui';
+import { useCompanyData } from '@/hooks/use-company-data';
+import { pct, usd, usdCompact } from '@/lib/format';
 import { usePortfolios } from '@/store/portfolios';
 import { colors, radius, spacing } from '@/theme';
 
@@ -44,17 +43,7 @@ function Detail({ portfolio }: { portfolio: Portfolio }) {
       {portfolio.philosophy ? <Text style={styles.philosophy}>{portfolio.philosophy}</Text> : null}
 
       {portfolio.is_account ? (
-        // Accounts are real positions with cost basis, imports and drift —
-        // not ported yet, so hand off to the web app.
-        <View style={styles.card}>
-          <Muted>Brokerage account positions are on the web app for now.</Muted>
-          <View style={{ height: spacing.md }} />
-          <Button
-            label="Open on the web"
-            variant="secondary"
-            onPress={() => WebBrowser.openBrowserAsync(`${API_BASE_URL}/portfolios`)}
-          />
-        </View>
+        <AccountPositions portfolioId={portfolio.id} />
       ) : (
         <>
           {sectors.length > 0 && (
@@ -78,6 +67,117 @@ function Detail({ portfolio }: { portfolio: Portfolio }) {
         </>
       )}
     </ScrollView>
+  );
+}
+
+// Real brokerage positions, read-only: monitoring is mobile's job; editing
+// shares/cost-basis, imports, and the AI review stay on the web app.
+function AccountPositions({ portfolioId }: { portfolioId: string }) {
+  const state = useCompanyData<AccountPositionsResponse>(
+    `/api/positions/${encodeURIComponent(portfolioId)}`,
+  );
+
+  if (state.kind === 'loading') {
+    return <ActivityIndicator style={{ marginTop: spacing.lg }} color={colors.textMuted} />;
+  }
+  if (state.kind === 'error' || state.kind === 'missing') {
+    return <ErrorText>{state.kind === 'error' ? state.message : 'No positions found.'}</ErrorText>;
+  }
+
+  const { positions, totals } = state.data;
+  const held = positions
+    .filter((p) => p.shares > 0)
+    .sort((a, b) => (b.market_value ?? 0) - (a.market_value ?? 0));
+  const hasTargets = positions.some((p) => p.target_weight > 0);
+
+  return (
+    <>
+      <View style={styles.summary}>
+        <SummaryStat label="Value" value={usd(totals.market_value)} />
+        {totals.cost > 0 && <SummaryStat label="Cost" value={usd(totals.cost)} />}
+        <SummaryStat
+          label="Return"
+          value={totals.return_pct == null ? '—' : `${totals.return_pct > 0 ? '+' : ''}${totals.return_pct.toFixed(2)}%`}
+          color={
+            totals.return_pct == null
+              ? undefined
+              : totals.return_pct >= 0
+                ? colors.positive
+                : colors.negative
+          }
+        />
+      </View>
+      <Text style={styles.section}>Positions</Text>
+      <View style={styles.card}>
+        {held.length ? (
+          held.map((p, i) => (
+            <PositionRow key={p.ticker} position={p} hasTargets={hasTargets} last={i === held.length - 1} />
+          ))
+        ) : (
+          <Muted>No positions yet. Import or enter them on the web app.</Muted>
+        )}
+      </View>
+      <Text style={styles.footnote}>Edit shares and cost basis on the web app.</Text>
+    </>
+  );
+}
+
+function SummaryStat({ label, value, color }: { label: string; value: string; color?: string }) {
+  return (
+    <View style={styles.summaryStat}>
+      <Text style={styles.summaryLabel}>{label}</Text>
+      <Text style={[styles.summaryValue, color ? { color } : null]}>{value}</Text>
+    </View>
+  );
+}
+
+function PositionRow({
+  position: p,
+  hasTargets,
+  last,
+}: {
+  position: AccountPosition;
+  hasTargets: boolean;
+  last: boolean;
+}) {
+  const ret = p.return_pct;
+  // Same out-of-band rule as the web table: flag drift beyond 20% of the
+  // target weight, with a 0.5pp floor.
+  const driftBand = Math.max(0.005, p.target_weight * 0.2);
+  const driftWarn = hasTargets && p.in_strategy && Math.abs(p.drift) > driftBand;
+  return (
+    <Pressable
+      style={({ pressed }) => [styles.row, !last && styles.rowBorder, pressed && { opacity: 0.7 }]}
+      onPress={() => router.push({ pathname: '/company/[ticker]', params: { ticker: p.ticker } })}>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <View style={styles.tickerLine}>
+          <Text style={styles.ticker}>{p.ticker}</Text>
+          {!p.in_strategy && hasTargets && <Text style={styles.offStrategy}>off strategy</Text>}
+        </View>
+        <Text style={styles.company} numberOfLines={1}>
+          {p.shares % 1 === 0 ? p.shares : p.shares.toFixed(4)} sh
+          {p.cost_basis != null ? ` @ ${usd(p.cost_basis)}` : ''}
+        </Text>
+        <Text style={styles.weights}>
+          {(p.actual_weight * 100).toFixed(1)}%
+          {hasTargets && p.in_strategy
+            ? ` of account · target ${(p.target_weight * 100).toFixed(1)}%${
+                driftWarn ? ` · drift ${p.drift > 0 ? '+' : ''}${(p.drift * 100).toFixed(1)}pp ⚠` : ''
+              }`
+            : ' of account'}
+        </Text>
+      </View>
+      <View style={{ alignItems: 'flex-end' }}>
+        <Text style={styles.value}>{usdCompact(p.market_value)}</Text>
+        <Text
+          style={[
+            styles.return,
+            { color: ret == null ? colors.textFaint : ret >= 0 ? colors.positive : colors.negative },
+          ]}>
+          {ret == null ? '—' : `${ret > 0 ? '+' : ''}${ret.toFixed(1)}%`}
+        </Text>
+      </View>
+    </Pressable>
   );
 }
 
@@ -145,4 +245,27 @@ const styles = StyleSheet.create({
   company: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
   alloc: { color: colors.text, fontSize: 15, fontVariant: ['tabular-nums'] },
   mos: { fontSize: 12, marginTop: 2, fontVariant: ['tabular-nums'] },
+  summary: { flexDirection: 'row', gap: spacing.sm },
+  summaryStat: {
+    flex: 1,
+    backgroundColor: colors.panel,
+    borderColor: colors.border,
+    borderWidth: 1,
+    borderRadius: radius.md,
+    padding: spacing.md,
+  },
+  summaryLabel: { color: colors.textFaint, fontSize: 11 },
+  summaryValue: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: '700',
+    marginTop: 4,
+    fontVariant: ['tabular-nums'],
+  },
+  tickerLine: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm },
+  offStrategy: { color: colors.warning, fontSize: 10, fontWeight: '600' },
+  weights: { color: colors.textFaint, fontSize: 11, marginTop: 2 },
+  value: { color: colors.text, fontSize: 15, fontVariant: ['tabular-nums'] },
+  return: { fontSize: 12, marginTop: 2, fontVariant: ['tabular-nums'] },
+  footnote: { color: colors.textFaint, fontSize: 12 },
 });
