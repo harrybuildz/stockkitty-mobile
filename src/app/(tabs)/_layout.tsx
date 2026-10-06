@@ -1,15 +1,21 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs } from 'expo-router/js-tabs';
-import { StyleSheet, Text, View, type ColorValue } from 'react-native';
+import type { ColorValue } from 'react-native';
 
 import { badgeLabel, useAlertBadgePolling } from '@/hooks/use-alert-badge';
 import { useAlerts } from '@/store/alerts';
 import { colors } from '@/theme';
 
-// Text-only tabs for the scaffold; icons arrive with the store-submission
-// polish pass.
+type IconName = keyof typeof Ionicons.glyphMap;
+
+function TabIcon({ name, color }: { name: IconName; color: ColorValue }) {
+  return <Ionicons name={name} size={22} color={color} />;
+}
+
 export default function TabsLayout() {
   useAlertBadgePolling();
   const unread = useAlerts((s) => s.unackedCount);
+  const badge = badgeLabel(unread);
 
   return (
     <Tabs
@@ -18,52 +24,46 @@ export default function TabsLayout() {
         tabBarStyle: { backgroundColor: colors.panel, borderTopColor: colors.border },
         tabBarActiveTintColor: colors.text,
         tabBarInactiveTintColor: colors.textFaint,
-        tabBarIconStyle: { display: 'none' },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+        tabBarLabelStyle: { fontSize: 10, fontWeight: '600' },
       }}>
-      <Tabs.Screen name="index" options={{ title: 'Screener' }} />
-      <Tabs.Screen name="portfolios" options={{ title: 'Portfolios' }} />
-      <Tabs.Screen name="watchlist" options={{ title: 'Watchlist' }} />
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Screener',
+          tabBarIcon: ({ color }) => <TabIcon name="list" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="portfolios"
+        options={{
+          title: 'Portfolios',
+          tabBarIcon: ({ color }) => <TabIcon name="pie-chart" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="watchlist"
+        options={{
+          title: 'Watchlist',
+          tabBarIcon: ({ color }) => <TabIcon name="star" color={color} />,
+        }}
+      />
       <Tabs.Screen
         name="alerts"
         options={{
           title: 'Alerts',
-          // tabBarBadge renders inside the icon slot, which these text-only
-          // tabs hide, so the unread count lives in the label instead.
-          tabBarLabel: ({ color }) => <AlertsLabel color={color} count={unread} />,
+          tabBarIcon: ({ color }) => <TabIcon name="notifications" color={color} />,
+          tabBarBadge: badge ?? undefined,
+          tabBarBadgeStyle: { backgroundColor: colors.negative, color: colors.text, fontSize: 10 },
           tabBarAccessibilityLabel: unread > 0 ? `Alerts, ${unread} unread` : 'Alerts',
         }}
       />
-      <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color }) => <TabIcon name="person" color={color} />,
+        }}
+      />
     </Tabs>
   );
 }
-
-function AlertsLabel({ color, count }: { color: ColorValue; count: number }) {
-  const badge = badgeLabel(count);
-  return (
-    <View style={styles.labelRow}>
-      <Text style={[styles.label, { color }]}>Alerts</Text>
-      {badge && (
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>{badge}</Text>
-        </View>
-      )}
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  labelRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  label: { fontSize: 11, fontWeight: '600' },
-  badge: {
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    paddingHorizontal: 4,
-    backgroundColor: colors.negative,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  badgeText: { color: colors.text, fontSize: 10, fontWeight: '700' },
-});

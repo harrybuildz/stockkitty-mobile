@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { api, ApiError } from '@/api/client';
 import { FilterSheet } from '@/components/filter-sheet';
@@ -62,7 +62,10 @@ export default function ScreenerScreen() {
 
   return (
     <Screen>
-      <Title>Screener</Title>
+      <View style={styles.brand}>
+        <Image source={require('../../../assets/images/logo.png')} style={styles.brandLogo} />
+        <Title>StockKitty</Title>
+      </View>
       <View style={styles.controls}>
         <TextInput
           style={[styles.search, { flex: 1 }]}
@@ -204,6 +207,8 @@ function Row({ row }: { row: ScreenerRow }) {
 }
 
 const styles = StyleSheet.create({
+  brand: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  brandLogo: { width: 32, height: 32, marginBottom: spacing.md, resizeMode: 'contain' },
   controls: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm },
   search: {
     backgroundColor: colors.panel,
