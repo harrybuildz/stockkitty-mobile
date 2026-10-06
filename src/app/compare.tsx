@@ -52,7 +52,10 @@ export default function Compare() {
   return (
     <View style={styles.screen}>
       <Stack.Screen options={{ title: 'Compare' }} />
-      <ScrollView contentContainerStyle={styles.pad} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={styles.pad}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag">
         <View style={styles.chips}>
           {selected.map(({ ticker }) => (
             <Pressable
@@ -71,6 +74,7 @@ export default function Compare() {
             placeholderTextColor={colors.textFaint}
             autoCapitalize="characters"
             autoCorrect={false}
+            returnKeyType="done"
             value={query}
             onChangeText={setQuery}
           />

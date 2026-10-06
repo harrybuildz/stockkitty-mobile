@@ -90,6 +90,7 @@ export default function ScreenerScreen() {
           placeholderTextColor={colors.textFaint}
           autoCapitalize="characters"
           autoCorrect={false}
+          returnKeyType="done"
           value={query}
           onChangeText={setQuery}
           clearButtonMode="while-editing"
@@ -120,6 +121,7 @@ export default function ScreenerScreen() {
         }
         initialNumToRender={20}
         windowSize={10}
+        keyboardDismissMode="on-drag"
         ListEmptyComponent={
           loading ? null : (
             <Centered>
