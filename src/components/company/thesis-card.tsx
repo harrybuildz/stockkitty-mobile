@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { api, ApiError } from '@/api/client';
 import { Button } from '@/components/ui';
+import { upgradeMessage, UpgradePrompt } from '@/components/upgrade-prompt';
 import { track } from '@/lib/analytics';
 import { relativeAge } from '@/lib/time';
 import { useCompanyData } from '@/hooks/use-company-data';
@@ -29,6 +30,7 @@ export function ThesisCard({ ticker }: { ticker: string }) {
   const [generated, setGenerated] = useState<Thesis | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [gated, setGated] = useState<string | null>(null);
 
   const generate = () => {
     track('thesis_generate', { ticker });
@@ -39,12 +41,15 @@ export function ThesisCard({ ticker }: { ticker: string }) {
     })
       .then(setGenerated)
       .catch((e) => {
+        setGated(upgradeMessage(e));
         setError(
-          e instanceof ApiError && e.status === 429
-            ? 'Refresh budget used up for now — try again in an hour.'
-            : e instanceof ApiError && e.detail
-              ? e.detail
-              : 'Generation failed. Try again in a moment.',
+          upgradeMessage(e) != null
+            ? null
+            : e instanceof ApiError && e.status === 429
+              ? 'Refresh budget used up for now — try again in an hour.'
+              : e instanceof ApiError && e.detail
+                ? e.detail
+                : 'Generation failed. Try again in a moment.',
         );
       })
       .finally(() => setBusy(false));
@@ -73,6 +78,10 @@ export function ThesisCard({ ticker }: { ticker: string }) {
     );
   }
 
+  // Plan-gated: the whole feature is paid — no CTA that would just 402.
+  if (state.kind === 'gated') {
+    return <DataCard title="AI thesis" state={state}>{() => null}</DataCard>;
+  }
   // Cache miss (or still loading/error): the card becomes a generate CTA.
   if (state.kind === 'loading') {
     return <DataCard title="AI thesis" state={state}>{() => null}</DataCard>;
@@ -86,7 +95,11 @@ export function ThesisCard({ ticker }: { ticker: string }) {
           up against peers.
         </Text>
         {error != null && <Text style={styles.error}>{error}</Text>}
-        <Button label={busy ? 'Generating…' : 'Generate thesis'} loading={busy} onPress={generate} />
+        {gated != null ? (
+          <UpgradePrompt message={gated} bare />
+        ) : (
+          <Button label={busy ? 'Generating…' : 'Generate thesis'} loading={busy} onPress={generate} />
+        )}
       </View>
     </>
   );

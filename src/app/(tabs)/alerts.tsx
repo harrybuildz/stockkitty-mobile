@@ -5,6 +5,7 @@ import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'rea
 import { ApiError } from '@/api/client';
 import type { Alert } from '@/api/types';
 import { Button, Centered, ErrorText, Muted, Screen, Title } from '@/components/ui';
+import { upgradeMessage, UpgradePrompt } from '@/components/upgrade-prompt';
 import { track } from '@/lib/analytics';
 import { getPushPermissionStatus, pushSupported, registerForAlertPush } from '@/lib/push';
 import { relativeAge } from '@/lib/time';
@@ -51,8 +52,12 @@ export default function Alerts() {
         <Segment label="New" active={!showAll} onPress={() => void setShowAll(false)} />
         <Segment label="All" active={showAll} onPress={() => void setShowAll(true)} />
       </View>
-      {error != null && (
-        <ErrorText>{error instanceof ApiError ? (error.detail ?? error.message) : String(error)}</ErrorText>
+      {upgradeMessage(error) != null ? (
+        <UpgradePrompt message={upgradeMessage(error)!} />
+      ) : (
+        error != null && (
+          <ErrorText>{error instanceof ApiError ? (error.detail ?? error.message) : String(error)}</ErrorText>
+        )
       )}
       <PushBanner />
       <FlatList

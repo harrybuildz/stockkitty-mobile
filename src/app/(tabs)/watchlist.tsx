@@ -5,6 +5,7 @@ import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'rea
 import { ApiError } from '@/api/client';
 import type { ScreenerRow } from '@/api/types';
 import { Centered, ErrorText, Muted, Screen, Title } from '@/components/ui';
+import { upgradeMessage, UpgradePrompt } from '@/components/upgrade-prompt';
 import { track } from '@/lib/analytics';
 import { pct, usd } from '@/lib/format';
 import { useScreener } from '@/store/screener';
@@ -30,8 +31,12 @@ export default function Watchlist() {
   return (
     <Screen>
       <Title>Watchlist</Title>
-      {error != null && (
-        <ErrorText>{error instanceof ApiError ? (error.detail ?? error.message) : String(error)}</ErrorText>
+      {upgradeMessage(error) != null ? (
+        <UpgradePrompt message={upgradeMessage(error)!} />
+      ) : (
+        error != null && (
+          <ErrorText>{error instanceof ApiError ? (error.detail ?? error.message) : String(error)}</ErrorText>
+        )
       )}
       <FlatList
         data={tickers}

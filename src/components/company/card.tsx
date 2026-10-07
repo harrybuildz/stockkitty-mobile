@@ -1,5 +1,6 @@
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
+import { UpgradePrompt } from '@/components/upgrade-prompt';
 import { colors, radius, spacing } from '@/theme';
 import type { CompanyData } from '@/hooks/use-company-data';
 
@@ -29,6 +30,11 @@ export function DataCard<T>({
           <ActivityIndicator style={styles.pad} color={colors.textMuted} />
         )}
         {state.kind === 'error' && <Text style={[styles.pad, styles.dim]}>{state.message}</Text>}
+        {state.kind === 'gated' && (
+          <View style={styles.pad}>
+            <UpgradePrompt message={state.message} bare />
+          </View>
+        )}
         {state.kind === 'missing' && <Text style={[styles.pad, styles.dim]}>{missingText}</Text>}
         {state.kind === 'ready' && children(state.data)}
       </View>
