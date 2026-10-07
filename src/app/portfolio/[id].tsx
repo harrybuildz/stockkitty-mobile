@@ -4,6 +4,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 
 import type { AccountPosition, AccountPositionsResponse, Portfolio, PortfolioHolding } from '@/api/types';
 import { Centered, ErrorText, Muted } from '@/components/ui';
+import { UpgradePrompt } from '@/components/upgrade-prompt';
 import { useCompanyData } from '@/hooks/use-company-data';
 import { pct, usd, usdThousands } from '@/lib/format';
 import { usePortfolios } from '@/store/portfolios';
@@ -79,6 +80,9 @@ function AccountPositions({ portfolioId }: { portfolioId: string }) {
 
   if (state.kind === 'loading') {
     return <ActivityIndicator style={{ marginTop: spacing.lg }} color={colors.textMuted} />;
+  }
+  if (state.kind === 'gated') {
+    return <UpgradePrompt message={state.message} />;
   }
   if (state.kind === 'error' || state.kind === 'missing') {
     return <ErrorText>{state.kind === 'error' ? state.message : 'No positions found.'}</ErrorText>;

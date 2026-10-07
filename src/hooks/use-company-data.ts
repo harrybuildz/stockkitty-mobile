@@ -6,6 +6,7 @@ export type CompanyData<T> =
   | { kind: 'loading' }
   | { kind: 'ready'; data: T }
   | { kind: 'missing' } // 404 — batch hasn't computed this yet (or no cache)
+  | { kind: 'gated'; message: string } // 402 — plan gate; render an upgrade prompt
   | { kind: 'error'; message: string };
 
 /**
@@ -26,6 +27,11 @@ export function useCompanyData<T>(path: string): CompanyData<T> {
         if (!current) return;
         if (e instanceof ApiError && e.status === 404) {
           setState({ path, value: { kind: 'missing' } });
+        } else if (e instanceof ApiError && e.status === 402) {
+          setState({
+            path,
+            value: { kind: 'gated', message: e.detail ?? 'This feature needs a paid plan.' },
+          });
         } else {
           const message =
             e instanceof ApiError && e.detail ? e.detail : 'Couldn’t load this section.';
