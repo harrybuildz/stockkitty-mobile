@@ -5,7 +5,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import type { AccountPosition, AccountPositionsResponse, Portfolio, PortfolioHolding } from '@/api/types';
 import { Centered, ErrorText, Muted } from '@/components/ui';
 import { useCompanyData } from '@/hooks/use-company-data';
-import { pct, usd, usdCompact } from '@/lib/format';
+import { pct, usd, usdThousands } from '@/lib/format';
 import { usePortfolios } from '@/store/portfolios';
 import { colors, radius, spacing } from '@/theme';
 
@@ -93,8 +93,8 @@ function AccountPositions({ portfolioId }: { portfolioId: string }) {
   return (
     <>
       <View style={styles.summary}>
-        <SummaryStat label="Value" value={usd(totals.market_value)} />
-        {totals.cost > 0 && <SummaryStat label="Cost" value={usd(totals.cost)} />}
+        <SummaryStat label="Value" value={usdThousands(totals.market_value)} />
+        {totals.cost > 0 && <SummaryStat label="Cost" value={usdThousands(totals.cost)} />}
         <SummaryStat
           label="Return"
           value={totals.return_pct == null ? '—' : `${totals.return_pct > 0 ? '+' : ''}${totals.return_pct.toFixed(2)}%`}
@@ -126,7 +126,15 @@ function SummaryStat({ label, value, color }: { label: string; value: string; co
   return (
     <View style={styles.summaryStat}>
       <Text style={styles.summaryLabel}>{label}</Text>
-      <Text style={[styles.summaryValue, color ? { color } : null]}>{value}</Text>
+      {/* Never wrap a dollar amount — "$11439.9 / 3" reads as two numbers.
+          Shrink to fit the card instead. */}
+      <Text
+        style={[styles.summaryValue, color ? { color } : null]}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.7}>
+        {value}
+      </Text>
     </View>
   );
 }
@@ -168,7 +176,7 @@ function PositionRow({
         </Text>
       </View>
       <View style={{ alignItems: 'flex-end' }}>
-        <Text style={styles.value}>{usdCompact(p.market_value)}</Text>
+        <Text style={styles.value}>{usdThousands(p.market_value, 0)}</Text>
         <Text
           style={[
             styles.return,

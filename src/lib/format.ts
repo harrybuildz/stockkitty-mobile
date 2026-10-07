@@ -9,6 +9,18 @@ export function pct(value: number | null | undefined, digits = 1): string {
   return `${sign}${(value * 100).toFixed(digits)}%`;
 }
 
+// Exact dollars with thousands separators: $11,439.93 / $1,486. Hand-rolled
+// because Hermes' Intl support varies by platform build. For account-sized
+// numbers — compacting these to "$11K" hides money the user owns.
+export function usdThousands(value: number | null | undefined, digits = 2): string {
+  if (value == null || !Number.isFinite(value)) return '—';
+  const sign = value < 0 ? '-' : '';
+  const fixed = Math.abs(value).toFixed(digits);
+  const [whole, frac] = fixed.split('.');
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return `${sign}$${grouped}${frac ? `.${frac}` : ''}`;
+}
+
 // Compact dollars for big aggregates (insider trade totals): $1.2B / $34M / $560K.
 export function usdCompact(value: number | null | undefined): string {
   if (value == null || !Number.isFinite(value)) return '—';
