@@ -234,9 +234,12 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.md,
   },
-  sectorHead: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  sectorName: { color: colors.textMuted, fontSize: 13 },
-  sectorPct: { color: colors.text, fontSize: 13, fontVariant: ['tabular-nums'] },
+  // Sector names can be long SIC strings ("APPAREL & OTHER FINISHD PRODS
+  // OF FABRICS…") — the name must flex and the percentage must never be
+  // pushed off the right edge.
+  sectorHead: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.md, marginBottom: 4 },
+  sectorName: { color: colors.textMuted, fontSize: 13, flex: 1, minWidth: 0 },
+  sectorPct: { color: colors.text, fontSize: 13, fontVariant: ['tabular-nums'], flexShrink: 0 },
   track: { height: 6, backgroundColor: colors.border, borderRadius: 3, overflow: 'hidden' },
   fill: { height: 6, backgroundColor: colors.accentSoft },
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.md, gap: spacing.md },
