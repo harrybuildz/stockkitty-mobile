@@ -50,3 +50,16 @@ npx eas-cli@latest build --platform all --profile preview
 ```
 
 iOS builds need an Apple Developer account; EAS walks you through signing on the first build. For day-to-day development keep using `npx expo start` with `.env.local`.
+
+## Over-the-air updates
+
+JS-only changes (most fixes) ship without a rebuild:
+
+```sh
+npx eas-cli@latest update --channel preview --message "what changed" --environment production
+```
+
+Installed apps pick the update up on next launch. Updates only reach
+builds with an identical native fingerprint (`runtimeVersion: fingerprint`),
+so after adding/upgrading a native module, run a full `eas build` instead —
+the publish is then simply not delivered to old builds, never crashing them.

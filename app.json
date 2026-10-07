@@ -21,7 +21,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.stockkitty.app"
+      "package": "com.stockkitty.app",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "output": "static",
@@ -56,6 +57,12 @@
         "projectId": "f2264230-5dcd-4122-bfe1-04c841df3f3a"
       }
     },
-    "owner": "hclemente"
+    "owner": "hclemente",
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/f2264230-5dcd-4122-bfe1-04c841df3f3a"
+    }
   }
 }
