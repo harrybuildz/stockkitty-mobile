@@ -98,8 +98,17 @@ function PushBanner() {
     void getPushPermissionStatus().then((status) => {
       if (!current) return;
       if (status === 'granted') {
-        setState('enabled');
-        void registerForAlertPush().catch(() => {});
+        // Permission granted ≠ registered: the token fetch or the server
+        // call can still fail (e.g. missing FCM config). A silent catch
+        // here once hid exactly that — surface failures as the banner
+        // with the real error so they're visible and retryable.
+        registerForAlertPush()
+          .then(() => current && setState('enabled'))
+          .catch((e) => {
+            if (!current) return;
+            setState('prompt');
+            setMessage(e instanceof Error ? e.message : 'Could not register for notifications.');
+          });
       } else {
         setState('prompt');
       }

@@ -9,14 +9,16 @@
       "env": {
         "EXPO_PUBLIC_API_BASE_URL": "https://stockkitty-production.up.railway.app"
       },
-      "channel": "preview"
+      "channel": "preview",
+      "environment": "preview"
     },
     "production": {
       "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_API_BASE_URL": "https://stockkitty-production.up.railway.app"
       },
-      "channel": "production"
+      "channel": "production",
+      "environment": "production"
     }
   },
   "submit": {
