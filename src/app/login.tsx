@@ -1,8 +1,8 @@
 import * as WebBrowser from 'expo-web-browser';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { ApiError } from '@/api/client';
+import { api, ApiError } from '@/api/client';
 import { Button, ErrorText, Screen } from '@/components/ui';
 import { API_BASE_URL } from '@/config';
 import { useAuth } from '@/store/auth';
@@ -14,6 +14,14 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  // Launch switch: once self-serve signup opens, a store-acquired user
+  // with no account gets a real path instead of a dead-end login form.
+  const [regOpen, setRegOpen] = useState(false);
+  useEffect(() => {
+    api<{ open: boolean }>('/api/auth/registration')
+      .then((r) => setRegOpen(Boolean(r.open)))
+      .catch(() => {});
+  }, []);
 
   async function submit() {
     if (!username.trim() || !password) {
@@ -71,6 +79,13 @@ export default function Login() {
           />
           {error && <ErrorText>{error}</ErrorText>}
           <Button label="Sign in" onPress={submit} loading={loading} />
+          {regOpen && (
+            <Button
+              label="New to StockKitty? Create your free account"
+              variant="secondary"
+              onPress={() => void WebBrowser.openBrowserAsync(`${API_BASE_URL}/register`)}
+            />
+          )}
           {/* Invite sign-up and security-question recovery stay on the web
               for now; invite links will deep-link into the app later. */}
           <Pressable onPress={() => WebBrowser.openBrowserAsync(`${API_BASE_URL}/login`)}>
