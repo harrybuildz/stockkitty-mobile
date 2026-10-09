@@ -13,7 +13,7 @@ const { api, ApiError, setAuthFailureHandler } = await import('./client');
 type Call = { path: string; auth: string | undefined; body: string | undefined };
 let calls: Call[];
 let validToken: string;
-let refreshBehavior: 'ok' | 'fail';
+let refreshBehavior: 'ok' | 'fail' | 'down' | 'offline';
 let refreshCount: number;
 
 function json(status: number, data: unknown) {
@@ -36,9 +36,11 @@ function fakeFetch(input: string, init: RequestInit = {}) {
   }
   if (path === '/api/auth/refresh') {
     refreshCount += 1;
+    if (refreshBehavior === 'offline') return Promise.reject(new TypeError('Network request failed'));
     return new Promise<Response>((resolve) =>
       setTimeout(() => {
         if (refreshBehavior === 'fail') return resolve(json(401, { detail: 'expired' }));
+        if (refreshBehavior === 'down') return resolve(json(502, { detail: 'Bad gateway' }));
         validToken = `access-${refreshCount}`;
         resolve(json(200, { access_token: validToken, token_type: 'bearer' }));
       }, 20),
@@ -97,6 +99,26 @@ describe('api client refresh-on-401', () => {
     expect(store.has('sk_token')).toBe(false);
     expect(store.has('sk_refresh')).toBe(false);
   });
+
+  it.each(['down', 'offline'] as const)(
+    'stays signed in when the refresh fails transiently (%s)',
+    async (behavior) => {
+      // A deploy restart (502) or a dropped connection is not an expired
+      // session: keep both tokens so the next request can refresh normally.
+      refreshBehavior = behavior;
+      const onFail = vi.fn();
+      setAuthFailureHandler(onFail);
+      await expect(api('/api/screener')).rejects.toMatchObject({
+        detail: expect.stringContaining("Can't reach StockKitty"),
+      });
+      expect(onFail).not.toHaveBeenCalled();
+      expect(store.get('sk_refresh')).toBe('refresh-1');
+
+      refreshBehavior = 'ok';
+      await expect(api<{ path: string }>('/api/screener')).resolves.toEqual({ path: '/api/screener' });
+      expect(onFail).not.toHaveBeenCalled();
+    },
+  );
 
   it('retries only once, then signs out, when the server keeps returning 401', async () => {
     const onFail = vi.fn();

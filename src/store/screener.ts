@@ -9,6 +9,7 @@ type ScreenerState = {
   loading: boolean;
   error: unknown;
   fetch: () => Promise<void>;
+  clearError: () => void;
 };
 
 export const useScreener = create<ScreenerState>((set, get) => ({
@@ -37,4 +38,8 @@ export const useScreener = create<ScreenerState>((set, get) => ({
       set({ loading: false });
     }
   },
+  // Sign-out keeps the rows (screener data isn't per-user) but must drop
+  // the error: the screen only refetches when it has no rows, so a stale
+  // "session expired" would otherwise outlive the next sign-in.
+  clearError: () => set({ error: null }),
 }));

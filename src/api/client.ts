@@ -87,6 +87,17 @@ function refreshAccessToken(): Promise<string> {
   return refreshPromise;
 }
 
+// Only these answers from /api/auth/refresh mean the session itself is
+// gone (expired, revoked by a password change, disabled account). Anything
+// else — no network, a timeout, a 5xx or 502 while Railway restarts the
+// server during a deploy, a 429 — is transient: keep the tokens and let
+// the next request try again, instead of signing the user out.
+function isSessionRejection(e: unknown): boolean {
+  return e instanceof ApiError && (e.status === 401 || e.status === 403);
+}
+
+const UNREACHABLE = "Can't reach StockKitty right now. Check your connection and try again.";
+
 async function failSession(): Promise<never> {
   await clearTokens();
   onAuthFailure();
@@ -120,8 +131,9 @@ export async function api<T>(path: string, opts: RequestOptions = {}): Promise<T
     } else {
       try {
         token = await refreshAccessToken();
-      } catch {
-        return failSession();
+      } catch (e) {
+        if (isSessionRejection(e)) return failSession();
+        throw new ApiError(e instanceof ApiError ? e.status : 0, UNREACHABLE);
       }
     }
     // Exactly one retry. A second 401 after a successful refresh means the
