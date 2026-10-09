@@ -7,6 +7,7 @@ import { unregisterPush } from '@/lib/push';
 import { clearUserCaches } from '@/lib/storage-cache';
 import { useAlerts } from '@/store/alerts';
 import { usePortfolios } from '@/store/portfolios';
+import { useScreener } from '@/store/screener';
 import { useWatchlist } from '@/store/watchlist';
 
 type AuthState = {
@@ -48,6 +49,9 @@ export const useAuth = create<AuthState>((set, get) => ({
     await setTokens(tokens.access_token, tokens.refresh_token);
     const user = await api<Me>('/api/auth/me');
     set({ status: 'signedIn', user });
+    // Fresh data for the new session — the screen won't refetch on its own
+    // while cached rows are present.
+    void useScreener.getState().fetch();
   },
 
   // Mirrors the web acceptance gate: re-read /me so terms_accepted reflects
@@ -70,6 +74,7 @@ export const useAuth = create<AuthState>((set, get) => ({
     useWatchlist.getState().reset();
     useAlerts.getState().reset();
     usePortfolios.getState().reset();
+    useScreener.getState().clearError();
     clearUserCaches();
   },
 }));
