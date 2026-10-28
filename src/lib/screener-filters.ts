@@ -31,8 +31,11 @@ export type ColumnFilter = {
 
 // Flags arrive as a JSON string of {code, model, msg}. Quiet codes are
 // data-provider coverage gaps, info codes are informational — neither
-// counts as a "loud" flag.
-const QUIET_FLAG_CODES = new Set(['missing_depreciation', 'missing_capex']);
+// counts as a "loud" flag. partial_data (cost lines missing for some years)
+// is informational per the backend and must not land in "Data issues":
+// unlisted it did, and the default filters hid ~half the universe. Mirrors
+// stockkitty frontend/src/utils/flags.js.
+const QUIET_FLAG_CODES = new Set(['missing_depreciation', 'missing_capex', 'partial_data']);
 const INFO_FLAG_CODES = new Set(['ddm_primary']);
 const STRUCTURAL_FLAG_CODES = new Set(['financial_sector', 'reit_sector', 'utility_sector']);
 
