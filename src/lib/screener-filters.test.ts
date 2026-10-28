@@ -51,6 +51,12 @@ describe('flag parsing', () => {
     expect(loudFlags(flags).map((f) => f.code)).toEqual(['sparse_data']);
   });
 
+  it('treats partial_data as quiet, not a data issue', () => {
+    const flags = JSON.stringify([{ code: 'partial_data' }]);
+    expect(loudFlags(flags)).toEqual([]);
+    expect([...flagCategories(flags)]).toEqual([]);
+  });
+
   it('maps unknown codes to the data category', () => {
     const flags = JSON.stringify([{ code: 'some_future_code' }]);
     expect([...flagCategories(flags)]).toEqual(['data']);
