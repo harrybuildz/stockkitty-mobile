@@ -21,14 +21,19 @@ const SENTIMENT_COLOR: Record<string, string> = {
 // News & sentiment aggregates + recent headlines. Headlines open in the
 // in-app browser. The web panel's sparkline and per-subreddit Reddit
 // breakdown are deferred with the rest of the charts work.
+//
+// While the server has no news source it sends news_enabled: false (with
+// zeroed article fields); the card then shows Reddit only (NEWS-2).
 export function SentimentCard({ ticker }: { ticker: string }) {
   const state = useCompanyData<NewsSentiment>(
     `/api/company/${encodeURIComponent(ticker)}/news-sentiment`,
   );
+  const newsOn = !(state.kind === 'ready' && state.data.news_enabled === false);
   return (
-    <DataCard title="News & sentiment" state={state}>
+    <DataCard title={newsOn ? 'News & sentiment' : 'Reddit buzz'} state={state}>
       {(s) => (
         <>
+          {newsOn && (<>
           <MetricRow
             label={`Sentiment, 7 days (${s.news_count_7d} articles)`}
             value={pct(s.net_sentiment_7d, 0)}
@@ -51,10 +56,11 @@ export function SentimentCard({ ticker }: { ticker: string }) {
               <Sparkline values={s.sentiment_history!.map((d) => d.net_sentiment)} />
             </View>
           )}
+          </>)}
           <MetricRow
             label="Reddit mentions (24h)"
             value={s.reddit_mentions == null ? '—' : String(s.reddit_mentions)}
-            last={!s.recent_headlines.length && !s.reddit_by_subreddit}
+            last={!(newsOn && s.recent_headlines?.length) && !s.reddit_by_subreddit}
           />
           {s.reddit_by_subreddit != null &&
             Object.entries(s.reddit_by_subreddit).map(([sub, r]) => (
@@ -66,7 +72,7 @@ export function SentimentCard({ ticker }: { ticker: string }) {
                 }`}
               />
             ))}
-          {s.recent_headlines.slice(0, HEADLINE_LIMIT).map((h, i, shown) => (
+          {(newsOn ? s.recent_headlines ?? [] : []).slice(0, HEADLINE_LIMIT).map((h, i, shown) => (
             <Pressable
               key={h.url}
               style={({ pressed }) => [
