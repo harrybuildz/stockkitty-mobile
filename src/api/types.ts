@@ -163,6 +163,9 @@ export type NewsSentiment = {
     { mentions: number; rank: number; rank_change: number | null; sentiment_score: number | null }
   > | null;
   fetch_status?: 'partial' | 'stale';
+  // false while the server has no news source (NEWS-2): article fields are
+  // zeroed and the card shows Reddit only. Absent on older servers.
+  news_enabled?: boolean;
 };
 
 // GET /api/company/{ticker}/insider — available=false when the server has
